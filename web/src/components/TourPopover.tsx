@@ -9,7 +9,7 @@ import { PopoverContentProps } from '@reactour/tour'
 import React, { ReactElement, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { TOUR_POPOVER_MAX_WIDTH } from '../constants/tour'
+import { TOUR_POPOVER_ELEMENT_ID, TOUR_POPOVER_MAX_WIDTH } from '../constants/tour'
 import useLocalStorage, { TOUR_VISIBLE_STORAGE_KEY } from '../hooks/useLocalStorage'
 import useLockedBody from '../hooks/useLockedBody'
 import { TourStepType } from '../utils/tourSteps'
@@ -87,6 +87,7 @@ const TourPopover = ({ steps, currentStep, setCurrentStep, setIsOpen }: PopoverC
   return (
     <StyledPaper
       ref={paperRef}
+      id={TOUR_POPOVER_ELEMENT_ID}
       role='dialog'
       aria-label={t($ => $.tour.title)}
       aria-describedby={CONTENT_ELEMENT_ID}

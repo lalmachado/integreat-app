@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 
 import buildConfig from '../constants/buildConfig'
 import { HEADER_MENU_ELEMENT_ID, HEADER_MENU_PANEL_ELEMENT_ID } from '../constants/layout'
+import { TOUR_POPOVER_ELEMENT_ID } from '../constants/tour'
 import useDimensions from '../hooks/useDimensions'
 import { useRouteParams } from '../hooks/useRegionContentParams'
 import { withDividers } from '../utils'
@@ -25,6 +26,20 @@ import MenuItem from './MenuItem'
 import QrCodeDialog from './QrCodeDialog'
 
 const COPY_TIMEOUT = 3000
+const TOUR_MENU_CONTAINER_ELEMENT_ID = 'header-menu-tour-container'
+
+// As a modal, the menu hides all other children of its container from screen readers.
+// While the tour shows the menu, it is therefore mounted in a separate container to keep the tour popover accessible.
+const getTourMenuContainer = (): HTMLElement => {
+  const existingContainer = document.getElementById(TOUR_MENU_CONTAINER_ELEMENT_ID)
+  if (existingContainer) {
+    return existingContainer
+  }
+  const container = document.createElement('div')
+  container.id = TOUR_MENU_CONTAINER_ELEMENT_ID
+  document.body.appendChild(container)
+  return container
+}
 
 const StyledMenu = styled(MuiMenu)({
   marginTop: 8,
@@ -50,6 +65,7 @@ const HeaderMenu = ({ children, pageTitle, fitScreen, ref }: HeaderMenuProps): R
   const [expandedAccordion, setExpandedAccordion] = React.useState<'share' | 'legal' | null>(null)
   const [urlCopied, setUrlCopied] = React.useState<boolean>(false)
   const [qrShareOpen, setQrShareOpen] = React.useState<boolean>(false)
+  const [openedByTour, setOpenedByTour] = React.useState<boolean>(false)
   const { regionCode, languageCode } = useRouteParams()
   const { mobile } = useDimensions()
   const { t } = useTranslation()
@@ -58,7 +74,11 @@ const HeaderMenu = ({ children, pageTitle, fitScreen, ref }: HeaderMenuProps): R
 
   const closeMenu = () => setMenuAnchorElement(null)
   const open = menuAnchorElement !== null
-  const toggleMenu = (event: React.MouseEvent<HTMLElement>) => setMenuAnchorElement(open ? null : event.currentTarget)
+  const toggleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    // The menu can only be opened by the tour while it is running, as the tour disables interacting with the page
+    setOpenedByTour(document.getElementById(TOUR_POPOVER_ELEMENT_ID) !== null)
+    setMenuAnchorElement(open ? null : event.currentTarget)
+  }
 
   const items = Array.isArray(children) ? children : [children]
 
@@ -128,6 +148,12 @@ const HeaderMenu = ({ children, pageTitle, fitScreen, ref }: HeaderMenuProps): R
         anchorEl={menuAnchorElement}
         open={open}
         onClose={closeMenu}
+        // The focus has to stay in the tour popover while the tour shows the menu
+        container={openedByTour ? getTourMenuContainer : undefined}
+        autoFocus={!openedByTour}
+        disableAutoFocus={openedByTour}
+        disableEnforceFocus={openedByTour}
+        disableRestoreFocus={openedByTour}
         slotProps={{
           paper: { id: HEADER_MENU_PANEL_ELEMENT_ID },
           // Let the tour measure the menu once it is opened and positioned
